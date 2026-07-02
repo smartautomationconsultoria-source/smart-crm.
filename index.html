@@ -818,11 +818,21 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <div class="modal" style="width:580px">
     <div class="mh"><div class="mt">📄 Nova Proposta Comercial</div><button class="mc" onclick="closeModal('ov-proposta')">✕</button></div>
     <div class="fr"><div class="fg"><label>Cliente *</label><input id="fp-cliente" placeholder="Nome da empresa"></div><div class="fg"><label>Vendedor</label><select id="fp-vend"><option>Carlos Silva · PJ</option><option>Ana Ferreira · CLT</option><option>Roberto Costa · PJ</option><option>Juliana Mendes · CLT</option></select></div></div>
-    <div class="fr"><div class="fg"><label>Produto principal *</label><select id="fp-prod"><option>Linha Premium — Cães</option><option>Linha Economy — Cães</option><option>Linha Premium — Gatos</option><option>Mix Completo</option></select></div><div class="fg"><label>Quantidade (ton/mês)</label><input id="fp-qtd" placeholder="ex: 5" type="number"></div></div>
-    <div class="fr"><div class="fg"><label>Valor unitário (R$/ton)</label><input id="fp-unit" placeholder="ex: 4.500" type="number"></div><div class="fg"><label>Desconto (%)</label><input id="fp-desc" placeholder="0" type="number" oninput="calcProposta()"></div></div>
-    <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;color:var(--muted)">Valor total calculado:</span>
-      <span style="font-size:18px;font-weight:800;color:var(--green)" id="fp-total">R$ 0,00</span>
+    <div class="fr"><div class="fg"><label>Produto principal *</label><select id="fp-prod"><option>Linha Premium — Cães</option><option>Linha Economy — Cães</option><option>Linha Premium — Gatos</option><option>Mix Completo</option></select></div><div class="fg"><label>Quantidade (ton/mês)</label><input id="fp-qtd" placeholder="ex: 5" type="number" oninput="calcProposta()"></div></div>
+    <div class="fr"><div class="fg"><label>Valor unitário (R$/ton)</label><input id="fp-unit" placeholder="ex: 4.500" type="number" oninput="calcProposta()"></div><div class="fg"><label>Desconto (%)</label><input id="fp-desc" placeholder="0" type="number" min="0" max="100" oninput="calcProposta()"></div></div>
+    <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Valor total calculado (qtd × unit − desconto):</span>
+        <span style="font-size:18px;font-weight:800;color:var(--green)" id="fp-total">R$ 0,00</span>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:8px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap">Ou informe o valor direto:</span>
+        <input id="fp-valor-direto" placeholder="Ex: 28000" type="number" min="0"
+          style="flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:6px;
+                 padding:6px 10px;color:var(--white);font-size:13px;font-weight:700"
+          oninput="calcPropostaValorDireto()">
+        <span style="font-size:11px;color:var(--muted)">R$</span>
+      </div>
     </div>
     <div class="fr"><div class="fg"><label>Validade da proposta</label><input id="fp-valid" type="date"></div><div class="fg"><label>Prazo de entrega</label><select id="fp-prazo"><option>7 dias úteis</option><option>15 dias úteis</option><option>30 dias</option><option>A combinar</option></select></div></div>
     <div class="fr full"><div class="fg"><label>Condições especiais / observações</label><textarea id="fp-obs" placeholder="Inclua condições de pagamento, frete, garantias..."></textarea></div></div>
@@ -1010,6 +1020,73 @@ function mostrarBannerPerfil(nome, role, filtro){
   document.querySelector('.main').insertBefore(b, document.querySelector('.topbar').nextSibling);
 }
 
+// ── PORTAL PÚBLICO — detecta link de proposta na URL ──────────────────────
+(function(){
+  const params = new URLSearchParams(location.search);
+  const propId = params.get('proposta');
+  if(!propId) return;
+  // Aguarda DOM e mostra portal sem login
+  document.addEventListener('DOMContentLoaded', function(){
+    const ls = document.getElementById('login-screen');
+    if(ls) ls.style.display='none';
+    _mostrarPortalPublico(propId);
+  });
+})();
+
+function _mostrarPortalPublico(propId){
+  document.body.style.overflow='auto';
+  const overlay = document.createElement('div');
+  overlay.id='portal-publico';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;overflow-y:auto;background:linear-gradient(135deg,#060A14,#0A1628);font-family:Inter,Arial,sans-serif';
+  overlay.innerHTML=`
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+      <div style="width:100%;max-width:560px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(30,111,255,.2)">
+          <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#1E6FFF,#0A3BAA);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px">SA</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#E8EEFF">Smart Automation</div>
+            <div style="font-size:11px;color:#4A9AFF">Portal do Cliente · Proposta ${propId}</div>
+          </div>
+        </div>
+        <div style="background:#080E1C;border:1px solid rgba(30,111,255,.25);border-radius:14px;padding:24px">
+          <div style="font-size:15px;font-weight:700;color:#E8EEFF;margin-bottom:4px">Olá! Aqui está a sua proposta comercial.</div>
+          <div style="font-size:12px;color:#6B7299;margin-bottom:20px">Acompanhe o status em tempo real. Dúvidas? Fale com seu consultor.</div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:20px;font-size:11px">
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.25)">✓ Enviada</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.25)">✓ Em análise</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(30,111,255,.2);color:#4A9AFF;border:1px solid rgba(30,111,255,.35);font-weight:700">● Negociação</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:transparent;color:#6B7299;border:1px solid rgba(107,114,153,.15)">Aprovada</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:transparent;color:#6B7299;border:1px solid rgba(107,114,153,.15)">Assinado</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Proposta</div><div style="font-size:14px;font-weight:700;color:#E8EEFF">${propId}</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Status</div><div style="font-size:13px;font-weight:700;color:#F59E0B">Em negociação</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(16,185,129,.2)"><div style="font-size:10px;color:#6B7299">Valor total</div><div style="font-size:16px;font-weight:800;color:#10B981">R$ 28.000</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Válida até</div><div style="font-size:13px;font-weight:700;color:#E8EEFF">30/07/2026</div></div>
+          </div>
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:11px 13px;margin-bottom:18px;font-size:12px;color:#6B7299">
+            ⏳ Proposta <b style="color:#F59E0B">em negociação</b> — seu consultor entrará em contato em breve.
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onclick="alert('PDF disponível em breve!')"
+              style="flex:1;padding:12px;background:linear-gradient(135deg,#1E6FFF,#2D84FF);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,Arial,sans-serif">
+              📄 Baixar proposta em PDF
+            </button>
+            <a href="https://wa.me/5519995586012?text=Olá!%20Proposta%20${propId}"
+               target="_blank"
+               style="padding:12px 14px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.25);color:#25d366;border-radius:9px;font-size:18px;display:flex;align-items:center;text-decoration:none">💬</a>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;font-size:10px;color:#3A3A5A">🔒 Acesso seguro · Smart Automation · smarttautomation.com.br</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 // -- DADOS ----------------------------------------------
 let leads=[
   {id:1,nome:'Frigorífico Bela Vista',cnpj:'11.222.333/0001-01',prod:'Linha Premium',orig:'Feira',vend:'Carlos Silva',tipo:'PJ',wpp:'5511999990001',val:'R$28.000',vn:28000,et:'b-prop',etxt:'Proposta',ult:'22/06',obs:'Interesse em contrato anual.',email:''},
@@ -1060,6 +1137,12 @@ const transferencias=[
   {cli:'Comercial Agro Norte',de:'Marcus Lima (desligado)',para:'Carlos Silva',data:'15/06',mot:'Desligamento'},
   {cli:'Distribuidora Pampa RS',de:'Flávia Souza (afastada)',para:'Ana Ferreira',data:'10/06',mot:'Afastamento'},
   {cli:'Pet Shop Rede Estrela',de:'Carlos Bastos (desligado)',para:'Juliana Mendes',data:'02/06',mot:'Desligamento'},
+];
+
+const transfHist=[
+  {cliente:'Pet Shop Rede Norte',de:'Roberto Costa',para:'Carlos Silva',data:'18/06/26',motivo:'Desligamento',briefing:'Enviado'},
+  {cliente:'Avicultura Santa Fe',de:'Roberto Costa',para:'Ana Ferreira',data:'18/06/26',motivo:'Desligamento',briefing:'Enviado'},
+  {cliente:'Distribuidora Pampa RS',de:'Marcos Pereira',para:'Carlos Silva',data:'10/06/26',motivo:'Redistribuição',briefing:'Enviado'},
 ];
 
 const vendExp=[
@@ -1469,12 +1552,121 @@ function renderPerdas(){
   </tr>`).join('');
 }
 
+
+// -- EDITAR / EXCLUIR PROPOSTA ─────────────────────────────────────────────
+function editarProposta(id){
+  const p = propostas.find(x=>x.id===id);
+  if(!p) return;
+
+  // Reutiliza o modal de nova proposta em modo edição
+  document.querySelector('#ov-proposta .mt').textContent = '✏️ Editar Proposta ' + p.id;
+  document.getElementById('fp-cliente').value = p.cliente || '';
+  document.getElementById('fp-obs').value     = p.obs     || '';
+
+  // Valor direto
+  const direto = document.getElementById('fp-valor-direto');
+  if(direto){
+    direto.value = p.valN || '';
+    document.getElementById('fp-total').textContent = p.val || 'R$ 0,00';
+  }
+
+  // Seta a data de validade
+  const validInput = document.getElementById('fp-valid');
+  if(validInput && p.valid && p.valid !== '—'){
+    try{
+      // Converte dd/mm/aa para yyyy-mm-dd
+      const partes = p.valid.split('/');
+      if(partes.length === 3){
+        const ano = partes[2].length === 2 ? '20'+partes[2] : partes[2];
+        validInput.value = `${ano}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+      }
+    }catch(e){}
+  }
+
+  // Muda o botão de gerar para salvar edição
+  const btnGerar = document.querySelector('#ov-proposta .btn-p:last-child');
+  if(btnGerar){
+    btnGerar.textContent = '💾 Salvar alterações';
+    btnGerar.onclick = () => salvarEdicaoProposta(id);
+  }
+
+  openModal('ov-proposta');
+  setTimeout(()=>document.getElementById('fp-cliente').focus(), 200);
+}
+
+function salvarEdicaoProposta(id){
+  const p = propostas.find(x=>x.id===id);
+  if(!p) return;
+
+  const novoCliente = document.getElementById('fp-cliente').value.trim();
+  if(!novoCliente){ toast('Informe o cliente','err'); return; }
+
+  const novoValor = _getValorProposta();
+  const novaValidade = document.getElementById('fp-valid').value;
+
+  p.cliente = novoCliente;
+  p.prod    = document.getElementById('fp-prod').value;
+  p.vend    = document.getElementById('fp-vend').value.split(' · ')[0];
+  p.obs     = document.getElementById('fp-obs').value;
+  p.valN    = novoValor;
+  p.val     = 'R$' + novoValor.toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+  if(novaValidade){
+    const d = new Date(novaValidade + 'T12:00:00');
+    p.valid = d.toLocaleDateString('pt-BR');
+  }
+
+  // Restaura o botão
+  const btnGerar = document.querySelector('#ov-proposta .btn-p:last-child');
+  if(btnGerar){
+    btnGerar.textContent = '📄 Gerar proposta';
+    btnGerar.onclick = gerarProposta;
+  }
+  document.querySelector('#ov-proposta .mt').textContent = '📄 Nova Proposta Comercial';
+
+  renderPropostas();
+  closeModal('ov-proposta');
+  toast('Proposta ' + id + ' atualizada!', 'ok');
+}
+
+function excluirProposta(id){
+  const p = propostas.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm('Excluir a proposta ' + id + ' de ' + p.cliente + '? Esta ação não pode ser desfeita.')) return;
+  const idx = propostas.findIndex(x=>x.id===id);
+  if(idx >= 0) propostas.splice(idx, 1);
+  renderPropostas();
+  document.getElementById('nb-prop').textContent = propostas.length;
+  toast('Proposta ' + id + ' excluída.', 'ok');
+}
+
 // -- CARTEIRA --------------------------------------------
 let transfId=null;
 function renderCarteira(){
   const rc={alto:'var(--red)',medio:'var(--amber)',baixo:'var(--green)'};
   const rl={alto:'Risco Alto',medio:'Risco Médio',baixo:'Baixo Risco'};
-  document.getElementById('cr-list').innerHTML=clientesRisco.map(c=>`
+  const crList = document.getElementById('cr-list');
+  if(!crList) return;
+  // Garante que os dados existem
+  if(typeof clientesRisco === 'undefined' || !clientesRisco.length){
+    crList.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted)">Nenhum cliente em risco identificado.</div>';
+    return;
+  }
+  // Popula histórico de transferências
+  const transfTb = document.getElementById('transf-tb');
+  if(transfTb && typeof transfHist !== 'undefined'){
+    transfTb.innerHTML = transfHist.map(t=>`
+      <tr>
+        <td style="font-weight:600">${t.cliente}</td>
+        <td style="color:var(--muted)">${t.de}</td>
+        <td style="color:var(--green);font-weight:600">${t.para}</td>
+        <td style="font-size:11px;color:var(--muted)">${t.data}</td>
+        <td style="font-size:11px">${t.motivo}</td>
+        <td><span class="badge b-fech" style="font-size:9px">${t.briefing}</span></td>
+      </tr>`).join('');
+  }
+
+  crList.innerHTML=clientesRisco.map(c=>`
     <div class="cri">
       <div class="cru" style="background:${rc[c.risco]};box-shadow:0 0 5px ${rc[c.risco]}"></div>
       <div class="crin">
@@ -1487,6 +1679,7 @@ function renderCarteira(){
         <button class="ab ab-t" title="Transferir" onclick="abrirTransf(${c.id})">🔀</button>
       </div>
     </div>`).join('');
+  if(typeof vendExp!=='undefined' && document.getElementById('vend-exp')){
   document.getElementById('vend-exp').innerHTML=vendExp.map(v=>{
     const pct=Math.round(v.excl/v.total*100);
     const cor=v.risco==='alto'?'var(--red)':v.risco==='medio'?'var(--amber)':'var(--green)';
@@ -1502,7 +1695,10 @@ function renderCarteira(){
       </div>
     </div>`;
   }).join('');
-  document.getElementById('transf-tb').innerHTML=transferencias.map(t=>`<tr>
+  }
+  // Popula histórico
+  const transfTbEl=document.getElementById('transf-tb');
+  if(transfTbEl) transfTbEl.innerHTML=transferencias.map(t=>`<tr>
     <td style="font-weight:700">${t.cli}</td>
     <td style="font-size:11px;color:var(--red)">${t.de}</td>
     <td style="font-size:11px;color:var(--green)">${t.para}</td>
@@ -1535,10 +1731,30 @@ function confirmarTransf(){
   toast(`✓ ${c?.nome} transferido com briefing!`,'ok');
 }
 function confirmarMassa(){
-  const de=document.getElementById('tm-de').value;
+  const de = document.getElementById('tm-de').value.split(' · ')[0];
+  const para = document.getElementById('tm-para').value.split(' · ')[0];
   closeModal('ov-massa');
-  toast('Redistribuindo carteira de '+de.split(' . ')[0]+'...','info');
-  setTimeout(()=>toast('Carteira redistribuída! Briefings enviados.','ok'),2000);
+  toast('Redistribuindo carteira de '+de+'...','info');
+
+  // Adiciona ao histórico de transferências
+  const clientesDe = clientesRisco.filter(c=>c.vend===de);
+  clientesDe.forEach(c=>{
+    transfHist.unshift({
+      cliente: c.nome,
+      de: de,
+      para: para === 'Distribuição automática' ? 'Equipe' : para,
+      data: new Date().toLocaleDateString('pt-BR'),
+      motivo: 'Transferência em massa',
+      briefing: 'Enviado'
+    });
+    c.vend = para === 'Distribuição automática' ? 'Equipe' : para;
+    c.risco = 'baixo';
+  });
+
+  setTimeout(()=>{
+    toast(clientesDe.length+' clientes transferidos de '+de+' com briefing automático!','ok');
+    renderCarteira(); // Re-renderiza com dados atualizados
+  }, 1800);
 }
 function verHistCarteira(id){
   const c=clientesRisco.find(x=>x.id===id);if(!c)return;
@@ -2222,6 +2438,73 @@ function initRel(){
 }
 
 
+// ── PORTAL PÚBLICO — detecta link de proposta na URL ──────────────────────
+(function(){
+  const params = new URLSearchParams(location.search);
+  const propId = params.get('proposta');
+  if(!propId) return;
+  // Aguarda DOM e mostra portal sem login
+  document.addEventListener('DOMContentLoaded', function(){
+    const ls = document.getElementById('login-screen');
+    if(ls) ls.style.display='none';
+    _mostrarPortalPublico(propId);
+  });
+})();
+
+function _mostrarPortalPublico(propId){
+  document.body.style.overflow='auto';
+  const overlay = document.createElement('div');
+  overlay.id='portal-publico';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;overflow-y:auto;background:linear-gradient(135deg,#060A14,#0A1628);font-family:Inter,Arial,sans-serif';
+  overlay.innerHTML=`
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+      <div style="width:100%;max-width:560px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(30,111,255,.2)">
+          <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,#1E6FFF,#0A3BAA);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px">SA</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#E8EEFF">Smart Automation</div>
+            <div style="font-size:11px;color:#4A9AFF">Portal do Cliente · Proposta ${propId}</div>
+          </div>
+        </div>
+        <div style="background:#080E1C;border:1px solid rgba(30,111,255,.25);border-radius:14px;padding:24px">
+          <div style="font-size:15px;font-weight:700;color:#E8EEFF;margin-bottom:4px">Olá! Aqui está a sua proposta comercial.</div>
+          <div style="font-size:12px;color:#6B7299;margin-bottom:20px">Acompanhe o status em tempo real. Dúvidas? Fale com seu consultor.</div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:20px;font-size:11px">
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.25)">✓ Enviada</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.25)">✓ Em análise</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:rgba(30,111,255,.2);color:#4A9AFF;border:1px solid rgba(30,111,255,.35);font-weight:700">● Negociação</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:transparent;color:#6B7299;border:1px solid rgba(107,114,153,.15)">Aprovada</span>
+            <span style="color:#6B7299">›</span>
+            <span style="padding:4px 9px;border-radius:20px;background:transparent;color:#6B7299;border:1px solid rgba(107,114,153,.15)">Assinado</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Proposta</div><div style="font-size:14px;font-weight:700;color:#E8EEFF">${propId}</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Status</div><div style="font-size:13px;font-weight:700;color:#F59E0B">Em negociação</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(16,185,129,.2)"><div style="font-size:10px;color:#6B7299">Valor total</div><div style="font-size:16px;font-weight:800;color:#10B981">R$ 28.000</div></div>
+            <div style="background:#0D1530;border-radius:9px;padding:12px;border:1px solid rgba(30,111,255,.15)"><div style="font-size:10px;color:#6B7299">Válida até</div><div style="font-size:13px;font-weight:700;color:#E8EEFF">30/07/2026</div></div>
+          </div>
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:11px 13px;margin-bottom:18px;font-size:12px;color:#6B7299">
+            ⏳ Proposta <b style="color:#F59E0B">em negociação</b> — seu consultor entrará em contato em breve.
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onclick="alert('PDF disponível em breve!')"
+              style="flex:1;padding:12px;background:linear-gradient(135deg,#1E6FFF,#2D84FF);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,Arial,sans-serif">
+              📄 Baixar proposta em PDF
+            </button>
+            <a href="https://wa.me/5519995586012?text=Olá!%20Proposta%20${propId}"
+               target="_blank"
+               style="padding:12px 14px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.25);color:#25d366;border-radius:9px;font-size:18px;display:flex;align-items:center;text-decoration:none">💬</a>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:14px;font-size:10px;color:#3A3A5A">🔒 Acesso seguro · Smart Automation · smarttautomation.com.br</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 // -- DADOS EXTRAS --------------------------------------
 const propostas = [
   {id:'P001',cliente:'Frigorífico Bela Vista',prod:'Linha Premium',vend:'Carlos Silva',val:'R$28.000',valN:28000,valid:'30/07/26',status:'Aguardando aprovação',prob:75,emitida:'22/06/26'},
@@ -2286,10 +2569,12 @@ function renderPropostas(){
       <td style="font-size:11px;color:var(--muted)">${p.valid}</td>
       <td><span class="badge ${st.cls}">${st.txt}</span></td>
       <td><div class="ac">
-        <button class="ab ab-e" title="Ver/editar" onclick="verProposta('${p.id}')">👁️</button>
+        <button class="ab ab-e" title="Ver detalhes" onclick="verProposta('${p.id}')">👁️</button>
+        <button class="ab" style="background:rgba(30,111,255,.12);color:var(--blue3)" title="Editar proposta" onclick="editarProposta('${p.id}')">✏️</button>
         <button class="ab ab-w" title="Gerar PDF" onclick="gerarPDFproposta('${p.id}')">📄</button>
         <button class="ab" style="background:var(--blue4);color:var(--blue3)" title="Enviar por email" onclick="enviarProposta('${p.id}')">📧</button>
         <button class="ab ab-w" title="Enviar WhatsApp" onclick="wppTpl('${leads[0]?.wpp||'5511999990001'}','${p.cliente}','proposta')">💬</button>
+        <button class="ab" style="background:rgba(239,68,68,.12);color:var(--red)" title="Excluir proposta" onclick="excluirProposta('${p.id}')">🗑</button>
       </div></td>
     </tr>`;
   }).join('');
@@ -2445,36 +2730,82 @@ async function _gerarPDF_proposta(prop){
 
 async function _garantirJsPDF(){
   if(window.jspdf) return;
-  // Carrega dinamicamente se não estiver disponível
-  await new Promise((resolve, reject) => {
-    const s1 = document.createElement('script');
-    s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    s1.onload = () => {
-      const s2 = document.createElement('script');
-      s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';
-      s2.onload = resolve;
-      s2.onerror = resolve; // continua mesmo sem autotable
-      document.head.appendChild(s2);
-    };
-    s1.onerror = reject;
-    document.head.appendChild(s1);
-    setTimeout(resolve, 5000); // timeout de 5s
+  if(window.jsPDF){ window.jspdf = {jsPDF: window.jsPDF}; return; }
+  // Carrega dinamicamente
+  return new Promise((resolve) => {
+    const urls = [
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+      'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+    ];
+    let tried = 0;
+    function tryLoad(url){
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => {
+        if(window.jsPDF && !window.jspdf) window.jspdf = {jsPDF: window.jsPDF};
+        // Carrega autoTable
+        const s2 = document.createElement('script');
+        s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';
+        s2.onload = resolve;
+        s2.onerror = resolve;
+        document.head.appendChild(s2);
+      };
+      s.onerror = () => {
+        tried++;
+        if(tried < urls.length) tryLoad(urls[tried]);
+        else resolve(); // falha silenciosa
+      };
+      document.head.appendChild(s);
+    }
+    tryLoad(urls[0]);
+    setTimeout(resolve, 8000);
   });
 }
 function enviarProposta(id){const p=propostas.find(x=>x.id===id);toast('Enviando proposta '+p?.id+' para '+p?.cliente+'...','info');setTimeout(()=>toast('Proposta enviada por e-mail!','ok'),1500);}
 function abrirModalNovaProposta(){
-  const d=new Date();d.setDate(d.getDate()+15);
+  // Garante que está em modo "Nova" (não edição)
+  document.querySelector('#ov-proposta .mt').textContent = '📄 Nova Proposta Comercial';
+  const btnGerar = document.querySelector('#ov-proposta .btn-p:last-child');
+  if(btnGerar){ btnGerar.textContent = '📄 Gerar proposta'; btnGerar.onclick = gerarProposta; }
+
+  // Limpa os campos
+  document.getElementById('fp-cliente').value = '';
+  document.getElementById('fp-obs').value     = '';
+  const direto = document.getElementById('fp-valor-direto');
+  if(direto) direto.value = '';
+  document.getElementById('fp-qtd').value  = '';
+  document.getElementById('fp-unit').value = '';
+  document.getElementById('fp-desc').value = '0';
+  document.getElementById('fp-total').textContent = 'R$ 0,00';
+
+  const d=new Date(); d.setDate(d.getDate()+15);
   document.getElementById('fp-valid').valueAsDate=d;
-  document.getElementById('fp-total').textContent='R$ 0,00';
   openModal('ov-proposta');
   setTimeout(()=>document.getElementById('fp-cliente').focus(),200);
 }
 function calcProposta(){
-  const qtd=parseFloat(document.getElementById('fp-qtd')?.value)||0;
-  const unit=parseFloat(document.getElementById('fp-unit')?.value)||0;
-  const desc=parseFloat(document.getElementById('fp-desc')?.value)||0;
-  const total=qtd*unit*(1-desc/100);
-  document.getElementById('fp-total').textContent='R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const qtd  = parseFloat(document.getElementById('fp-qtd')?.value)  || 0;
+  const unit = parseFloat(document.getElementById('fp-unit')?.value) || 0;
+  const desc = parseFloat(document.getElementById('fp-desc')?.value) || 0;
+  if(qtd > 0 && unit > 0){
+    const total = qtd * unit * (1 - desc/100);
+    document.getElementById('fp-total').textContent = 'R$ ' + total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    const direto = document.getElementById('fp-valor-direto');
+    if(direto) direto.value = total.toFixed(2);
+  }
+}
+function calcPropostaValorDireto(){
+  const val = parseFloat(document.getElementById('fp-valor-direto')?.value) || 0;
+  document.getElementById('fp-total').textContent = 'R$ ' + val.toLocaleString('pt-BR',{minimumFractionDigits:2});
+}
+function _getValorProposta(){
+  // Pega o valor: direto se preenchido, senão calculado
+  const direto = parseFloat(document.getElementById('fp-valor-direto')?.value) || 0;
+  if(direto > 0) return direto;
+  const qtd  = parseFloat(document.getElementById('fp-qtd')?.value)  || 0;
+  const unit = parseFloat(document.getElementById('fp-unit')?.value) || 0;
+  const desc = parseFloat(document.getElementById('fp-desc')?.value) || 0;
+  return qtd * unit * (1 - desc/100);
 }
 function gerarProposta(){
   const c=document.getElementById('fp-cliente').value.trim();
@@ -2482,7 +2813,7 @@ function gerarProposta(){
   const qtd=parseFloat(document.getElementById('fp-qtd')?.value)||0;
   const unit=parseFloat(document.getElementById('fp-unit')?.value)||0;
   const desc=parseFloat(document.getElementById('fp-desc')?.value)||0;
-  const total=qtd*unit*(1-desc/100);
+  const total = _getValorProposta();
   const id='P00'+(propostas.length+1);
   propostas.unshift({id,cliente:c,prod:document.getElementById('fp-prod').value,vend:document.getElementById('fp-vend').value.split(' . ')[0],val:'R$'+total.toLocaleString('pt-BR'),valN:total,valid:document.getElementById('fp-valid').value,status:'Rascunho',prob:50,emitida:new Date().toLocaleDateString('pt-BR')});
   renderPropostas();
@@ -2633,151 +2964,101 @@ function renderForecast(){
 // -- PORTAL CLIENTE ------------------------------------
 function renderPortal(){
   const prop = propostas[0];
-  document.getElementById('portal-content').innerHTML = `
-    <div style="max-width:680px;margin:0 auto">
-      <div class="card" style="border-color:var(--line2);margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
-          <div class="logo-ico" style="width:44px;height:44px;font-size:16px">SA</div>
+  const container = document.getElementById('portal-content');
+  if(!container) return;
+
+  // Barra de info sobre o link
+  const linkDemo = 'https://smartautomationconsultoria-source.github.io/smart-crm/?proposta='+prop.id+'&token=demo2026';
+  const etapas = ['Proposta enviada','Em analise','Negociacao','Aprovada','Contrato assinado'];
+  const ci = 2; // Em negociacao
+
+  container.innerHTML = `
+    <div style="background:var(--blue4);border:1px solid var(--line2);border-radius:9px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--blue3);font-weight:600">🔗 Link enviado ao cliente:</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);flex:1;word-break:break-all">${linkDemo}</span>
+      <button onclick="navigator.clipboard?.writeText('${linkDemo}').then(()=>toast('Link copiado!','ok'))"
+        style="background:var(--grd,linear-gradient(135deg,#1E6FFF,#2D84FF));color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:'Inter',sans-serif;white-space:nowrap">
+        Copiar link
+      </button>
+    </div>
+
+    <div style="border:2px dashed var(--line2);border-radius:12px;overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--bg5);padding:7px 14px;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:1px;border-bottom:1px solid var(--line)">
+        PREVIA — EXATAMENTE O QUE O CLIENTE VE
+      </div>
+      <div style="padding:20px;background:var(--bg3)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#1E6FFF,#0A3BAA);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px">SA</div>
           <div>
-            <div style="font-size:15px;font-weight:800">Smart Automation</div>
-            <div style="font-size:11px;color:var(--blue3)">Portal do Cliente . Acompanhamento de Proposta</div>
+            <div style="font-size:14px;font-weight:800;color:var(--white)">Smart Automation</div>
+            <div style="font-size:11px;color:var(--blue3)">Portal do Cliente - Acompanhamento de Proposta</div>
           </div>
         </div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px">Olá, ${prop.cliente}!</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Aqui você acompanha o status da sua proposta em tempo real. Sem precisar ligar ou enviar e-mail.</div>
-        <div class="status-bar" style="margin-bottom:16px">
-          ${['Proposta enviada','Em análise','Negociação','Aprovada','Contrato assinado'].map((s,i)=>`
-            <span class="status-step ${i<2?'done':i===2?'active':''}">${i<2?'✓':i===2?'●':'○'} ${s}</span>${i<4?'<span class="status-arrow">›</span>':''}`).join('')}
+        <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px">Ola, ${prop.cliente}!</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Aqui voce acompanha o status da sua proposta em tempo real.</div>
+
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:16px;font-size:10px">
+          ${etapas.map((et,i)=>`
+            <span style="padding:4px 8px;border-radius:20px;font-weight:${i===ci?700:400};
+              background:${i<ci?'rgba(16,185,129,.15)':i===ci?'rgba(30,111,255,.2)':'transparent'};
+              color:${i<ci?'var(--green)':i===ci?'var(--blue3)':'var(--muted)'};
+              border:1px solid ${i<ci?'rgba(16,185,129,.3)':i===ci?'rgba(30,111,255,.4)':'rgba(107,114,153,.2)'}"
+            >${i<ci?'✓ ':i===ci?'● ':''} ${et}</span>
+            ${i<etapas.length-1?'<span style="color:var(--muted)">›</span>':''}`).join('')}
         </div>
-        <div class="det-grid" style="margin-bottom:16px">
-          <div class="di"><div class="dl">Proposta</div><div class="dv">${prop.id}</div></div>
-          <div class="di"><div class="dl">Produto</div><div class="dv">${prop.prod}</div></div>
-          <div class="di"><div class="dl">Valor total</div><div class="dv" style="color:var(--green)">${prop.val}</div></div>
-          <div class="di"><div class="dl">Válida até</div><div class="dv">${prop.valid}</div></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:var(--bg2);border-radius:8px;padding:11px 13px;border:1px solid var(--line)">
+            <div style="font-size:10px;color:var(--muted)">Proposta</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white)">${prop.id}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:11px 13px;border:1px solid var(--line)">
+            <div style="font-size:10px;color:var(--muted)">Produto</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white)">${prop.prod}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:11px 13px;border:1px solid var(--line)">
+            <div style="font-size:10px;color:var(--muted)">Valor total</div>
+            <div style="font-size:14px;font-weight:800;color:var(--green)">${prop.val}</div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:11px 13px;border:1px solid var(--line)">
+            <div style="font-size:10px;color:var(--muted)">Valida ate</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white)">${prop.valid}</div>
+          </div>
         </div>
-        <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--muted)">
-          ⏳ Sua proposta está <b style="color:var(--amber)">em negociação</b>. Seu consultor entrará em contato em breve para alinhar os próximos passos.
+
+        <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:11px 13px;margin-bottom:14px;font-size:12px;color:var(--muted)">
+          ⏳ Status atual: <b style="color:var(--amber)">Em negociacao</b> — seu consultor entrara em contato em breve.
         </div>
+
         <div style="display:flex;gap:8px">
-          <button class="btn btn-p" style="flex:1" onclick="toast('Abrindo PDF da proposta...','info')">📄 Baixar proposta em PDF</button>
-          <button class="btn btn-g" style="flex:1" onclick="wpp('5511999990001','${prop.cliente}','suporte')">💬 Falar com consultor</button>
+          <button onclick="toast('Gerando PDF da proposta para o cliente...','info');setTimeout(()=>toast('PDF enviado!','ok'),1500)"
+            style="flex:1;padding:11px;background:linear-gradient(135deg,#1E6FFF,#2D84FF);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">
+            📄 Baixar proposta em PDF
+          </button>
+          <button onclick="wppTpl('5519999990001','${prop.cliente}','${prop.prod}')"
+            style="padding:11px 14px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif">
+            💬
+          </button>
         </div>
       </div>
-      <div style="text-align:center;font-size:10px;color:var(--muted)">🔒 Acesso seguro . Smart Automation . smarttautomation.com.br</div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px">Como funciona para o cliente — etapas:</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${['Voce gera a proposta no CRM e clica em 📄 PDF ou em 📧 Enviar',
+           'O sistema abre o WhatsApp com mensagem ja escrita contendo o link unico da proposta',
+           'O cliente abre o link no celular e ve exatamente a tela acima — com status, PDF e contato direto',
+           'Quando voce avanca o status da proposta no CRM, o cliente ve em tempo real — sem precisar ligar'
+          ].map((t,i)=>`
+          <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);align-items:flex-start">
+            <span style="color:var(--blue3);font-weight:800;font-size:13px;flex-shrink:0">${i+1}.</span>
+            <span>${t}</span>
+          </div>`).join('')}
+      </div>
     </div>`;
 }
 
-
-
-
-// -- EXPORTAR PDF / CSV -------------------------------------------
-async function exportarLeadsPDF(){
-  await _garantirJsPDF();
-  if(!window.jspdf){ toast('Erro ao carregar gerador de PDF','err'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'landscape' });
-
-  doc.setFillColor(30,111,255);
-  doc.rect(0,0,300,18,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(13);
-  doc.setFont('helvetica','bold');
-  doc.text('Smart Automation CRM - Relatorio de Leads', 14, 12);
-  doc.setFontSize(9);
-  doc.text(new Date().toLocaleString('pt-BR'), 230, 12);
-
-  const colunas = ['Nome/Empresa','Produto','Vendedor','Tipo','Origem','Etapa','Valor','Ult. Contato'];
-  const linhas = leads.map(l=>[l.nome,l.prod,l.vend,l.tipo,l.orig,l.etxt,l.val,l.ult]);
-
-  doc.autoTable({
-    head:[colunas], body:linhas,
-    startY:22, theme:'striped',
-    headStyles:{fillColor:[30,111,255],textColor:255,fontStyle:'bold',fontSize:9},
-    bodyStyles:{fontSize:8},
-    alternateRowStyles:{fillColor:[240,244,255]},
-    margin:{left:14,right:14}
-  });
-
-  doc.setFontSize(8);
-  doc.setTextColor(100,100,100);
-  doc.text('Smart Automation - smarttautomation.com.br', 14, doc.internal.pageSize.height-8);
-  doc.text('Total: ' + leads.length + ' leads', 230, doc.internal.pageSize.height-8);
-
-  doc.save('leads_smart_crm_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
-  toast('PDF exportado!','ok');
-}
-
-async function exportarRelatoriosPDF(){
-  await _garantirJsPDF();
-  if(!window.jspdf){ toast('Erro ao carregar gerador de PDF','err'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFillColor(30,111,255);
-  doc.rect(0,0,220,22,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  doc.text('Smart Automation CRM', 14, 10);
-  doc.setFontSize(10);
-  doc.setFont('helvetica','normal');
-  doc.text('Relatorio Executivo - ' + new Date().toLocaleDateString('pt-BR'), 14, 17);
-
-  let y = 30;
-  const kpis = [
-    ['KPI','Valor','Status'],
-    ['Leads Ativos','47','Normal'],
-    ['Fechamentos do Mes','9','+3 vs mes anterior'],
-    ['Perdas do Mes','12','Analisar motivos'],
-    ['Taxa de Conversao','19%','Meta: 25%'],
-    ['Pipeline Total','R$340.000','23 negocios abertos'],
-    ['Receita Fechada (Jun)','R$127.000','+22% vs mai'],
-  ];
-  doc.autoTable({ head:[kpis[0]], body:kpis.slice(1), startY:y, theme:'striped',
-    headStyles:{fillColor:[30,111,255],textColor:255,fontSize:10},
-    columnStyles:{2:{textColor:[100,100,100]}} });
-
-  y = doc.lastAutoTable.finalY + 10;
-  if(window.perdaData && perdaData.length){
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(11);
-    doc.setTextColor(0,0,0);
-    doc.text('Analise de Perdas', 14, y); y+=6;
-    const pRows = perdaData.map(p=>[p.nome,p.vend,p.val,p.etapa,p.motivo,p.data]);
-    doc.autoTable({head:[['Cliente','Vendedor','Valor','Etapa','Motivo','Data']],body:pRows,
-      startY:y,theme:'striped',headStyles:{fillColor:[239,68,68],textColor:255,fontSize:9},bodyStyles:{fontSize:8}});
-  }
-
-  doc.setFontSize(8); doc.setTextColor(100,100,100);
-  doc.text('Smart Automation - smarttautomation.com.br', 14, doc.internal.pageSize.height-8);
-  doc.save('relatorio_smart_crm_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.pdf');
-  toast('Relatorio PDF exportado!','ok');
-}
-
-// -- PWA INSTALL ---------------------------------------------------
-let _pwaPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  _pwaPrompt = e;
-  const btn = document.getElementById('pwa-btn');
-  if(btn) { btn.style.borderColor='var(--green,#10B981)'; btn.style.color='var(--green,#10B981)'; }
-});
-window.addEventListener('appinstalled', () => {
-  toast('CRM instalado como app!','ok');
-  const btn = document.getElementById('pwa-btn');
-  if(btn) btn.style.display='none';
-});
-async function instalarCRMApp(){
-  if(_pwaPrompt){
-    _pwaPrompt.prompt();
-    const r = await _pwaPrompt.userChoice;
-    if(r.outcome==='accepted') toast('CRM instalado com sucesso!','ok');
-    _pwaPrompt=null;
-    return;
-  }
-  // Mostra modal de instrução visual em vez de alert()
-  _mostrarModalInstalar();
-}
 
 function _mostrarModalInstalar(){
   const existing = document.getElementById('modal-instalar');
